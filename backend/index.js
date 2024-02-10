@@ -4,7 +4,13 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
 const session = require('express-session')
-const User = require('../models/User')
+const User = require('./models/User')
+
+const mongoDB = 'mongodb+srv://samppa97:Ujfuplboub@cluster0.xdr7dpw.mongodb.net/recipeApp?retryWrites=true&w=majority'
+mongoose.connect(mongoDB)
+mongoose.Promise = Promise
+const db = mongoose.connection
+db.on('error', console.error.bind(console, 'MongoDB connection error'))
 
 app.use(express.json())
 
@@ -18,7 +24,7 @@ const getUserById = async (id) => {
     return user
 }
 
-const initializePassport = require('../pasport-config')
+const initializePassport = require('./passport-config')
 initializePassport(passport, getUserByEmail, getUserById)
 
 app.use(session({
