@@ -1,6 +1,15 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Register from './components/Register'
+
 const App = () => {
   return (
-    <p>Hello</p>
+    <Router>
+      <div className='App'>
+        <Routes>
+          <Route path='/register' element={<Register />} />
+        </Routes>
+      </div>
+    </Router>
   )
 }
 

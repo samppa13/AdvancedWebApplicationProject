@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
+const cors = require('cors')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
 const session = require('express-session')
@@ -12,7 +13,9 @@ mongoose.Promise = Promise
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error'))
 
+app.use(cors())
 app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 
 const getUserByEmail = async (email) => {
     const user = await User.findOne({ email: email })
@@ -35,7 +38,7 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
-app.post('/api/user/register', async (request, response) => {
+app.post('/api/user/register/', async (request, response) => {
     const body = request.body
     const user = await User.findOne({ email: body.email })
     if (user) {
@@ -57,4 +60,4 @@ app.post('/api/user/login',
     }
 )
 
-app.listen(3000)
+app.listen(1234)
