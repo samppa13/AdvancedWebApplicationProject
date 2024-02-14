@@ -1,30 +1,21 @@
-const LogalStrategy = require('passport-local').Strategy
+const passport = require('passport')
+const { Strategy, ExtractJwt } = require('passport-jwt')
 const bcrypt = require('bcryptjs')
+const User = require('./models/User')
 
-const initialize = (passport, getUserByEmail, getUserById) => {
-    const authenticateUser = async (email, password, done) => {
-        const user = getUserByEmail(email)
-        if (user === null) {
-            return done(null, false)
+module.exports = () => {
+    const authenticateUser = async (jwtPayload, done) => {
+        const user = await User.findOne({ email: jwtPayload.email })
+        if (user) {
+            return done(null, user)
         }
-        try {
-            const boolean = await bcrypt.compare(password, user.password)
-            if (boolean) {
-                return done(null, user)
-            }
-            else {
-                return done(null, false)
-            }
-        } catch (error) {
-            return done(error)
-        }
+        return done(null, false)
     }
-    passport.use(new LogalStrategy(authenticateUser))
-    passport.serializeUser((user, done) => done(null, user.id))
-    passport.deserializeUser((id, done) => {
-        const user = getUserById(id)
-        return done(null, user)
-    })
+    passport.use(new Strategy(
+        {
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            secretOrKey: process.env.SECRET
+        },
+        authenticateUser
+    ))
 }
-
-module.exports = initialize

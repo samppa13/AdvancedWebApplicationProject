@@ -1,10 +1,14 @@
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const mongoose = require('mongoose')
 const cors = require('cors')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
-const session = require('express-session')
+const jwt = require('jsonwebtoken')
+const multer = require('multer')
+const storage = multer.memoryStorage()
+const upload = multer({ storage })
 const User = require('./models/User')
 
 const mongoDB = 'mongodb+srv://samppa97:Ujfuplboub@cluster0.xdr7dpw.mongodb.net/recipeApp?retryWrites=true&w=majority'
@@ -17,26 +21,8 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
-const getUserByEmail = async (email) => {
-    const user = await User.findOne({ email: email })
-    return user
-}
-
-const getUserById = async (id) => {
-    const user = await User.findById(id)
-    return user
-}
-
 const initializePassport = require('./passport-config')
-initializePassport(passport, getUserByEmail, getUserById)
-
-app.use(session({
-    secret: 'njflnsdfjnjjnjk',
-    resave: false,
-    saveUninitialized: false
-}))
-app.use(passport.initialize())
-app.use(passport.session())
+initializePassport()
 
 app.post('/api/user/register/', async (request, response) => {
     const body = request.body
@@ -53,11 +39,32 @@ app.post('/api/user/register/', async (request, response) => {
     response.json(savedUser)
 })
 
-app.post('/api/user/login',
-    passport.authenticate('local', { failureMessage: true }),
-    async (request, response) => {
-        return response.status(200).json({ message: 'Login succesful' })
+app.post('/api/user/login', upload.none(), async (request, response) => {
+    const user = await User.findOne({ email: request.body.email })
+    if (!user) {
+        return response.status(403).json({ message: 'Login fails' })
     }
-)
+    const boolean = await bcrypt.compare(request.body.password, user.password)
+    if (boolean) {
+        const jwtPayload = {
+            id: user._id,
+            email: user.email
+        }
+        jwt.sign(
+            jwtPayload,
+            process.env.SECRET,
+            {
+                expiresIn: 120
+            },
+            (error, token) => {
+                console.log(token)
+                response.json({ success: true, token: token })
+            }
+        )
+    }
+    else {
+        return response.status(403).json({ message: 'Login fails' })
+    }
+})
 
 app.listen(1234)
