@@ -57,7 +57,6 @@ app.post('/api/user/login', upload.none(), async (request, response) => {
                 expiresIn: 120
             },
             (error, token) => {
-                console.log(token)
                 response.json({ success: true, token: token })
             }
         )
