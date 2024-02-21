@@ -26,13 +26,18 @@ initializePassport()
 
 app.post('/api/user/register/', async (request, response) => {
     const body = request.body
-    const user = await User.findOne({ email: body.email })
+    let user = await User.findOne({ email: body.email })
     if (user) {
         return response.status(400).json({ error: `${user.email} already in use` })
+    }
+    user = await User.findOne({ username: body.username })
+    if (user) {
+        return response.status(400).json({ error: `${user.username} already in use` })
     }
     const hashedPassword = await bcrypt.hash(body.password, 10)
     const newUser = new User({
         email: body.email,
+        username: body.username,
         password: hashedPassword
     })
     const savedUser = await newUser.save()
