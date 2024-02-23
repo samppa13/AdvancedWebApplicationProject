@@ -10,7 +10,7 @@ const App = () => {
   const [jwt, setJwt] = useState('')
   const [user, setUser] = useState({})
   useEffect(() => {
-    const token = window.localStorage.getItem('auth_token')
+    const token = localStorage.getItem('auth_token')
     if (token) {
       setJwt(token)
       const loggedUser = JSON.parse(new Buffer.from(token.split('.')[1], 'base64').toString())

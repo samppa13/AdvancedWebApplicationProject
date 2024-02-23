@@ -71,4 +71,32 @@ app.post('/api/user/login', upload.none(), async (request, response) => {
     }
 })
 
+app.get('/api/users',
+    passport.authenticate('jwt', { session: false }),
+    async (request, response) => {
+        let users = await User.find({})
+        users = users.map(({ username, _id, title, information }) => ({ username: username, id: _id, title: title, information: information }))
+        response.json({ users: users })
+    }
+)
+
+app.post('/api/like/user/:id',
+    passport.authenticate('jwt', { session: false }),
+    async (response, request) => {
+        const user = await User.findById(request.req.params.id)
+        user.likeUsers = user.likeUsers.concat(response.body.likeUserId)
+        user.dislikeUsers = user.dislikeUsers.filter((id) => id !== request.params.id)
+        await user.save()
+    }
+)
+
+app.post('/api/dislike/user/:id',
+    passport.authenticate('jwt', { session: false }),
+    async (response, request) => {
+        const user = await User.findById(request.req.params.id)
+        user.dislikeUsers = user.dislikeUsers.concat(response.body.dislikeUserId)
+        await user.save()
+    }
+)
+
 app.listen(1234)
