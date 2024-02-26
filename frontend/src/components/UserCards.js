@@ -20,7 +20,7 @@ const UserCards = () => {
                 mode: 'cors'
             })
             const data = await response.json()
-            const userList = data.users.filter((user1) => user1.id !== user.id)
+            const userList = data.users.filter((user1) => user1.id !== loggedUser.id)
             setUsers(userList)
         }
         fetchUsers()

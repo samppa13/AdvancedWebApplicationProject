@@ -10,6 +10,7 @@ const multer = require('multer')
 const storage = multer.memoryStorage()
 const upload = multer({ storage })
 const User = require('./models/User')
+const Chat = require('./models/Chat')
 
 const mongoDB = 'mongodb+srv://samppa97:Ujfuplboub@cluster0.xdr7dpw.mongodb.net/recipeApp?retryWrites=true&w=majority'
 mongoose.connect(mongoDB)
@@ -82,20 +83,78 @@ app.get('/api/users',
 
 app.post('/api/like/user/:id',
     passport.authenticate('jwt', { session: false }),
-    async (response, request) => {
-        const user = await User.findById(request.req.params.id)
-        user.likeUsers = user.likeUsers.concat(response.body.likeUserId)
-        user.dislikeUsers = user.dislikeUsers.filter((id) => id !== request.params.id)
+    async (request, response) => {
+        let user = await User.findById(request.params.id)
+        user.likeUsers = user.likeUsers.concat(request.body.likeUserId)
+        user.dislikeUsers = user.dislikeUsers.filter((id) => id.toHexString() !== request.params.id)
         await user.save()
+        user = await User.findById(request.body.likeUserId)
+        if (user.likeUsers.find((id) => id.toHexString() === request.params.id)) {
+            const newChat = new Chat({
+                lastDate: Date.now(),
+                user1: request.params.id,
+                user2: request.body.likeUserId
+            })
+            await newChat.save()
+            return response.json({ message: 'Created new chat' })
+        }
+        response.json({ message: 'Succesful' })
     }
 )
 
 app.post('/api/dislike/user/:id',
     passport.authenticate('jwt', { session: false }),
-    async (response, request) => {
-        const user = await User.findById(request.req.params.id)
-        user.dislikeUsers = user.dislikeUsers.concat(response.body.dislikeUserId)
+    async (request, response) => {
+        const user = await User.findById(request.params.id)
+        user.dislikeUsers = user.dislikeUsers.concat(request.body.dislikeUserId)
         await user.save()
+    }
+)
+
+app.get('/api/chats/:userId',
+    passport.authenticate('jwt', { session: false }),
+    async (request, response) => {
+        let chats = await Chat.find({}).populate('user1', { username: 1 }).populate('user2', { username: 1 })
+        chats = chats.filter((chat) => (chat.user1._id.toHexString() === request.params.userId || chat.user2._id.toHexString() === request.params.userId))
+        chats = chats.map((chat) => {
+            if (chat.user1._id.toHexString() === request.params.userId) {
+                return {
+                    id: chat._id,
+                    user: chat.user2,
+                    messages: chat.messages,
+                    lastDate: chat.lastDate
+                }
+            }
+            if (chat.user2._id.toHexString() === request.params.userId) {
+                return {
+                    id: chat._id,
+                    user: chat.user1,
+                    messages: chat.messages,
+                    lastDate: chat.lastDate
+                }
+            }
+        })
+        response.json({ chats: chats })
+    }
+)
+
+app.get('/api/chat/:id',
+    passport.authenticate('jwt', { session: false }),
+    async (request, response) => {
+        const chat = await Chat.findById(request.params.id)
+        response.json({ chat: chat })
+    }
+)
+
+app.put('/api/chat/:id',
+    passport.authenticate('jwt', { session: false }),
+    async (request, response) => {
+        let chat = await Chat.findById(request.params.id)
+        const date = Date.now()
+        chat.messages = chat.messages.concat({ sender: request.body.sender, date: date, message: request.body.message })
+        chat.lastDate = date
+        await chat.save()
+        response.json({ messages: chat.messages })
     }
 )
 
