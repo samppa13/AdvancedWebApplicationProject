@@ -158,4 +158,30 @@ app.put('/api/chat/:id',
     }
 )
 
+app.get('/api/user/:id',
+    passport.authenticate('jwt', { session: false }),
+    async (request, response) => {
+        const user = await User.findById(request.params.id)
+        response.json({ username: user.username, title: user.title, information: user.information })
+    }
+)
+
+app.put('/api/user/:id',
+    passport.authenticate('jwt', { session: false }),
+    async (request, response) => {
+        const updatedUser = await User.findByIdAndUpdate(
+            request.params.id,
+            {
+                username: request.body.username,
+                title: request.body.title,
+                information: request.body.information
+            },
+            {
+                new: true
+            }
+        )
+        response.json(updatedUser)
+    }
+)
+
 app.listen(1234)

@@ -6,6 +6,7 @@ import Register from './components/Register'
 import Login from './components/Login'
 import Header from './components/Header'
 import Chats from './components/Chats'
+import Profile from './components/Profile'
 
 const App = () => {
   const [jwt, setJwt] = useState('')
@@ -28,6 +29,9 @@ const App = () => {
           <Route path='/' element={<Home />} />
           {user?.id?.length > 0 &&
             <Route path='/chats' element={<Chats />} />
+          }
+          {user?.id?.length > 0 &&
+            <Route path='/profile' element={<Profile />} />
           }
           {!user?.id?.length > 0 &&
             <Route path='/register' element={<Register />} />
