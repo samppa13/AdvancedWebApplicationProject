@@ -6,13 +6,12 @@ import UserCard from './UserCard'
 const UserCards = () => {
     const [users, setUsers] = useState([])
     const [user, setUser] = useState({})
-    const [id, setId] = useState(0)
     useEffect(() => {
         const fetchUsers = async () => {
             const jwt = localStorage.getItem('auth_token')
             const loggedUser = JSON.parse(new Buffer.from(jwt.split('.')[1], 'base64').toString())
             setUser(loggedUser)
-            const response = await fetch('/api/users', {
+            const response = await fetch(`/api/users/${loggedUser.id}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `bearer ${jwt}`
@@ -40,10 +39,10 @@ const UserCards = () => {
                 'Content-type': 'application/json',
                 'Authorization': `bearer ${jwt}`
             },
-            body: JSON.stringify({ likeUserId: users[id].id }),
+            body: JSON.stringify({ likeUserId: users[0].id }),
             mode: 'cors'
         })
-        setId(id + 1)
+        setUsers(users.filter((user1) => user1.id !== users[0].id))
     }
     const dislikeUser = async () => {
         const jwt = localStorage.getItem('auth_token')
@@ -53,16 +52,23 @@ const UserCards = () => {
                 'Content-type': 'application/json',
                 'Authorization': `bearer ${jwt}`
             },
-            body: JSON.stringify({ dislikeUserId: users[id].id }),
+            body: JSON.stringify({ dislikeUserId: users[0].id }),
             mode: 'cors'
         })
-        setId(id + 1)
+        setUsers(users.filter((user1) => user1.id !== users[0].id))
     }
     if (users.length > 0) {
         return (
             <div {...swipe}>
-                <UserCard user={users[id]} />
+                <UserCard user={users[0]} />
             </div>
+        )
+    }
+    if (users.length === 0) {
+        return (
+            <h1>
+                Empty
+            </h1>
         )
     }
 }

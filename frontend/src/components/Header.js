@@ -12,6 +12,7 @@ const Header = ({ jwt }) => {
                 Menu
             </button>
             <ul className='dropdown-menu dropdown-menu-dark'>
+                <li><a className='dropdown-item' href='/'>Home page</a></li>
                 <li><a className='dropdown-item' href='/profile'>Edit your information</a></li>
                 <li><a className='dropdown-item' href='/chats'>List your chats</a></li>
                 <li><hr className='dropdown-divider' /></li>

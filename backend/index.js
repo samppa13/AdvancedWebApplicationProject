@@ -60,7 +60,7 @@ app.post('/api/user/login', upload.none(), async (request, response) => {
             jwtPayload,
             process.env.SECRET,
             {
-                expiresIn: 120
+                expiresIn: '7d'
             },
             (error, token) => {
                 response.json({ success: true, token: token })
@@ -72,10 +72,17 @@ app.post('/api/user/login', upload.none(), async (request, response) => {
     }
 })
 
-app.get('/api/users',
+app.get('/api/users/:id',
     passport.authenticate('jwt', { session: false }),
     async (request, response) => {
         let users = await User.find({})
+        const loggedUser = await User.findById(request.params.id)
+        loggedUser.likeUsers.forEach(userId => {
+            users = users.filter((user) => user._id.toHexString() !== userId.toHexString())
+        })
+        loggedUser.dislikeUsers.forEach(userId => {
+            users = users.filter((user) => user._id.toHexString() !== userId.toHexString())
+        })
         users = users.map(({ username, _id, title, information }) => ({ username: username, id: _id, title: title, information: information }))
         response.json({ users: users })
     }
@@ -86,7 +93,6 @@ app.post('/api/like/user/:id',
     async (request, response) => {
         let user = await User.findById(request.params.id)
         user.likeUsers = user.likeUsers.concat(request.body.likeUserId)
-        user.dislikeUsers = user.dislikeUsers.filter((id) => id.toHexString() !== request.params.id)
         await user.save()
         user = await User.findById(request.body.likeUserId)
         if (user.likeUsers.find((id) => id.toHexString() === request.params.id)) {
@@ -108,6 +114,7 @@ app.post('/api/dislike/user/:id',
         const user = await User.findById(request.params.id)
         user.dislikeUsers = user.dislikeUsers.concat(request.body.dislikeUserId)
         await user.save()
+        response.json({ message: 'Succesful' })
     }
 )
 
