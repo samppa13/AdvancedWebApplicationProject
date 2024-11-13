@@ -7,10 +7,24 @@ const bcrypt = require('bcryptjs')
 const passport = require('passport')
 const jwt = require('jsonwebtoken')
 const multer = require('multer')
-const storage = multer.memoryStorage()
-const upload = multer({ storage })
+const path = require('path')
+const fs = require('node:fs')
 const User = require('./models/User')
 const Chat = require('./models/Chat')
+
+const storage = multer.diskStorage({
+    destination: async (request, file, cb) => {
+        const uploadPath = `./uploads/${request.params.id}`
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true })
+        }
+        cb(null, uploadPath)
+    },
+    filename: (request, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`)
+    }
+})
+const upload = multer({ storage })
 
 const mongoDB = 'mongodb+srv://samppa97:Ujfuplboub@cluster0.xdr7dpw.mongodb.net/recipeApp?retryWrites=true&w=majority'
 mongoose.connect(mongoDB)
@@ -45,7 +59,7 @@ app.post('/api/user/register/', async (request, response) => {
     response.json(savedUser)
 })
 
-app.post('/api/user/login', upload.none(), async (request, response) => {
+app.post('/api/user/login', async (request, response) => {
     const user = await User.findOne({ email: request.body.email })
     if (!user) {
         return response.status(403).json({ message: 'Login fails' })
@@ -169,7 +183,15 @@ app.get('/api/user/:id',
     passport.authenticate('jwt', { session: false }),
     async (request, response) => {
         const user = await User.findById(request.params.id)
-        response.json({ username: user.username, title: user.title, information: user.information })
+        const photos = user.photos.map((photo) => {
+            const photoPath = path.join(__dirname, `./uploads/${request.params.id}`, photo)
+            return {
+                name: photo,
+                path: fs.readFileSync(photoPath).toString('base64'),
+                type: photo.split('.')[1]
+            }
+        })
+        response.json({ username: user.username, title: user.title, information: user.information, photos: photos })
     }
 )
 
@@ -188,6 +210,22 @@ app.put('/api/user/:id',
             }
         )
         response.json(updatedUser)
+    }
+)
+
+app.post('/api/user/:id/photo',
+    passport.authenticate('jwt', { session: false }),
+    upload.single('photo'),
+    async (request, response) => {
+        try {
+            const user = await User.findById(request.params.id)
+            user.photos = user.photos.concat(request.file.filename)
+            await user.save()
+            response.status(200).send({ message: 'File uploaded successfully.'})
+        }
+        catch (error) {
+            response.status(400).send({ message: 'Error uploading file', error })
+        }
     }
 )
 
