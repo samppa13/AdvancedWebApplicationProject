@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage })
 
-const mongoDB = 'mongodb+srv://samppa97:Ujfuplboub@cluster0.xdr7dpw.mongodb.net/recipeApp?retryWrites=true&w=majority'
+const mongoDB = process.env.MONGODBURL
 mongoose.connect(mongoDB)
 mongoose.Promise = Promise
 const db = mongoose.connection
